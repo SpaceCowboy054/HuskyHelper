@@ -1,5 +1,5 @@
 # HuskyHelper
-Fullstack web application for University of Connecticut students to search for classes and create schedules based on user-preferences.
+Fullstack web application for university students to search for classes and create schedules based on user-preferences.
 
 ## to do:
     - scheduling algorithm
