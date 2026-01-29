@@ -21,16 +21,16 @@ Fullstack web application for university students to search for classes and crea
 
 ## Work In Progress Website Images
 
-Landing Page
-<img src="README_images/HuskyHelperLandingPage.png" alt="Homepage" width="600">
-<img src="README_images/HuskyHelperLandingPage2.png" alt="Homepage" width="600">
-<img src="README_images/HuskyHelperLandingPage3.png" alt="Homepage" width="600">
+####Landing Page
+<img src="README_images/HuskyHelperLandingPage.png" alt="Homepage" width="900">
+<img src="README_images/HuskyHelperLandingPage2.png" alt="Homepage" width="900">
+<img src="README_images/HuskyHelperLandingPage3.png" alt="Homepage" width="900">
 
-Search Query Page
-<img src="README_images/HuskyHelperSearch.png" alt="Search Query Page" width="600">
+####Search Query Page
+<img src="README_images/HuskyHelperSearch.png" alt="Search Query Page" width="900">
 
-Saved Courses Page
-<img src="README_images/HuskyHelperSavedCourses.png" alt="Saved Courses Page" width="600">
+####Saved Courses Page
+<img src="README_images/HuskyHelperSavedCourses.png" alt="Saved Courses Page" width="900">
 
-Create Schedule Page
-<img src="README_images/HuskyHelperScheduleWIP.png" alt="Create Schedule Page" width="600">
+####Create Schedule Page
+<img src="README_images/HuskyHelperScheduleWIP.png" alt="Create Schedule Page" width="900">
