@@ -28,6 +28,9 @@ postgres_data/
 *.sqlite
 *.sqlite3
 
+# Notes
+notes.md
+
 # Python
 Backend/courses_html/*
 !Backend/courses_html/.gitkeep

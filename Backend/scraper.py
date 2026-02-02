@@ -15,6 +15,9 @@ from itertools import islice
 def scrape_default_data():
     # start session
     driver = webdriver.Chrome()
+
+    wait = WebDriverWait(driver, 10)  # 10 second timeout
+    
     # get all subjects we need to search
     with open("subjects_trunc.csv", "r") as f:
         rows = list(csv.reader(f))
@@ -24,35 +27,35 @@ def scrape_default_data():
             print("Current subject: " + subject)
             driver.get("https://student.studentadmin.uconn.edu/psc/CSGUE/EMPLOYEE/HRMS/c/UC_ENROLL.UC_GUEST_CLS_SCH.GBL")
             try:
-                # find subject field and input desired field
-                subject_field = driver.find_element(By.NAME, "UC_DERIVED_GST_SUBJECT")
-                subject_field.send_keys(subject + Keys.ENTER)
+                subject_field = wait.until(
+                    EC.presence_of_element_located((By.NAME, "UC_DERIVED_GST_SUBJECT"))
+                )
+                subject_field.send_keys(subject + Keys.TAB)
                 
-                # sleep to wait for DOM
-                time.sleep(1)
+                # Wait for semester dropdown to be clickable
+                semester_field = wait.until(
+                    EC.element_to_be_clickable((By.NAME, "UC_DERIVED_GST_STRM1"))
+                )
+                semester_field.send_keys("Spring" + Keys.TAB)
 
-                # set semester 
-                subject_clickable = driver.find_element(By.NAME, "UC_DERIVED_GST_STRM1")
-                subject_clickable.send_keys("Spring" + Keys.ENTER)
-
-                # sleep to wait for DOM
-                time.sleep(1)
-
-                # click on search button
-                search_button = driver.find_element(By.NAME, "UC_DERIVED_GST_SEARCH")
-                # search_button = wait.until(EC.element_to_be_clickable(By.NAME("UC_DERIVED_GST_SEARCH")))
+                # Wait for search button to be clickable
+                search_button = wait.until(
+                    EC.element_to_be_clickable((By.NAME, "UC_DERIVED_GST_SEARCH"))
+                )
                 search_button.click()
+                
+                wait.until(EC.staleness_of(search_button))
 
             except:
                 print("Error when searching for: " + subject + " in course search")
 
-            time.sleep(2)
+            print("Finished loading page for: " + subject)
             soup = BeautifulSoup(driver.page_source, "lxml")
             temp_subj_abbr = soup.find("span", {"id":"UC_CLASS_G_VW_SUBJECT$0"})
             if soup.find("div", {"id" : "alertmsg"}) or (temp_subj_abbr and temp_subj_abbr.get_text() != rows[i][1]) : continue
             subject = subject.replace("/", " ")
             subject = subject.replace(":", "")
-            with open("courses_html/" + subject + ".html", "w") as f:
+            with open("test_courses_html/" + subject + ".html", "w") as f:
                 f.write(soup.prettify())
 
     driver.quit()
@@ -245,47 +248,6 @@ def html_to_csv():
 if __name__ == "__main__":
     start = time.time()
     # updateTruncatedSubjectMap()
-    # scrape_default_data()
-    html_to_csv()
+    scrape_default_data()
+    # html_to_csv()
     print("Total Elapsed Time in minutes: " + str( (time.time() - start) / 60))
-
-"""
-
-15 minutes for scrape_default_data()
-
-to do:
-    problem:
-        we are getting extra files in courses_html because I can't determine if the course returns course(s) or is not found
-    fix:
-        check if the file has "course not found" when we search for the course catalog information
-    IMPORTANT:
-        this causes a disconnect between section data and course catalog data meaning a course could exist without associating course catalog data, but would you even list this on the website if you didn't have that data?
-
-    improve time complexity of scraping code?
-    load csvs into mysql
-
-    we forgot to add environmental column to courses so I added it through sql
-
-
-    frontend planning:
-    html, css (tailwind?), javascript
-    draw and visualize the main pages you want
-    backend programming language (Nodejs? Nextjs?)
-    make endpoints to see how you want the data to be retrieved
-        e.g. return courses based on criteria like location/in-person, show different schedules based on preferences, create a class block (comment down below)
-    additional questions:
-        how should you keep track of the user's saved courses/sections?
-        how to send user search options through endpoint?
-        how can you track the number of people visiting the site?
-
-sql pk/fk method - using natural keys as staging keys for surrogate key resolution during data loading.
-
-What should the prod pipeline for the U in CRUD look like? (Update)
-We should scrape the data and check if we even found the data to begin with (>1450 lines of html)
-Compare values to database to see if they need to be updated
-format the data and update the database
-
-
-Let students be able to add a temporary class that I possibly missed from web scraping
-this could also be useful for creating time-blocks
-""" 
