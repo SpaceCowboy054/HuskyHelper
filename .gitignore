@@ -31,9 +31,17 @@ postgres_data/
 # Notes
 notes.md
 
+# Server
+server/.env
+
+# Other
+package-lock.json
+package.json
+
 # Python
 Backend/courses_html/*
 !Backend/courses_html/.gitkeep
+Backend/.env
 Backend/trash/*
 Backend/__pycache__/
 Backend/*.py[cod]

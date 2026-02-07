@@ -9,6 +9,9 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
 import csv
+from dotenv import load_dotenv
+import os
+import requests
 from pathlib import Path
 from itertools import islice
 
@@ -61,7 +64,7 @@ def scrape_default_data():
     driver.quit()
 
 def updateTruncatedSubjectMap():
-    """writes csv filee with subject name, subject abbreviation"""
+    """writes csv file with subject name, subject abbreviation"""
     driver = webdriver.Chrome()
     driver.get("https://student.studentadmin.uconn.edu/psc/CSGUE/EMPLOYEE/HRMS/c/UC_ENROLL.UC_GUEST_CLS_SCH.GBL")
     time.sleep(2)
@@ -86,10 +89,8 @@ def updateTruncatedSubjectMap():
     with open("base.html", "w") as f:
         f.write(soup.prettify())
 
-# for data going into the database, the min length is 1450 lines of html
-# We need to put the html data into a csv file
 def html_to_csv():
-    """Preprocessing of data and normalization into csvs"""
+    """Preprocessing of html data and normalization into csvs"""
     driver = webdriver.Chrome()
 
     subj_header_row = ["subject name", "subject abbreviation"]
@@ -243,11 +244,37 @@ def html_to_csv():
     print(could_not_find_data)
     driver.quit()
 
+def update_database():
+    """This function pulls data from the generated csv files and updates the database accordingly."""
+    load_dotenv()
+    url = os.getenv("DATABASE_URL") + "/subjects"
+    headers = {"api-admin-key": os.getenv("API_ADMIN_KEY")}
+    data = {
+        "name": "Computer Science and Engineering",
+        "abbr": "CSE"
+    }
+    response = requests.get(url, json=data, headers=headers)
+    print(response.json())
+
+
+    # test api requests for subjects then implement the comments below
+
+
+    # Subjects csv file
+    # for each subject, get request
+    # compare get response to current subject data
+    # if duplicates exist, delete the incorrect one
+    # if different, put/patch request to update subject data
+    # if subject does not exist, post request to add subject data
+
+
+    # You need to add logic to verify that the courses have the correct subject foreign key, when you implement the courses csv file
 
 
 if __name__ == "__main__":
     start = time.time()
     # updateTruncatedSubjectMap()
-    scrape_default_data()
+    # scrape_default_data()
     # html_to_csv()
+    update_database()
     print("Total Elapsed Time in minutes: " + str( (time.time() - start) / 60))

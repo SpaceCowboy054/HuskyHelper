@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const pg = require('pg');
@@ -5,12 +6,11 @@ const cors = require('cors');
 const qs = require('qs')
 app.use(cors({ origin: 'http://localhost:3000' }));
 
-
-let connectionString = "postgres://postgres:at04Graham@localhost:5432/postgres";
+let connectionString = process.env.DATABASE_URL;
 const client = new pg.Client(connectionString);
 client.connect();
 
-app.listen(5000, () => {
+app.listen(process.env.SERVER_PORT, () => {
     console.log("server started");
 })
 
@@ -25,14 +25,10 @@ express.Router().use((req, res, next) => {
 
 const indexRouter = require('./routes/index.js');
 const searchRouter = require('./routes/search.js');
+const adminRouter = require('./routes/admin.js');
+const authentication = require('./auth.js');
+app.use('/admin', authentication, adminRouter)
 app.use('/search', searchRouter)
 app.use('/', indexRouter)
 
 module.exports = client;
-
-// async function queryDSA(){
-//     const query = await client.query("SELECT * FROM courses c JOIN subjects s on c.subject_id = s.subject_id WHERE course_name ilike '%C++%'");
-//     console.log(query.rows[0]);
-// }
-
-// queryDSA();
