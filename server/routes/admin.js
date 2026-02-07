@@ -10,13 +10,26 @@ const client = require("../connection")
 // Get all subjects that have the same name or abbrievated name
 router.get('/subjects', async(req, res) =>{
     try{
-        let { name, abbr } = req.body;
+        let name = undefined;
+        let abbr = undefined;
+        
+        if (req.body) {
+            name = req.body.name
+            abbr = req.body.abbr
+        }
+        
+        // Get all if no name, abbr
+        if (!name && !abbr) {
+            const query = await client.query(`SELECT * FROM subjects`);
+            return res.json(query.rows);
+        }
+        
         const query = await client.query(
             `SELECT * FROM subjects 
             WHERE abbreviation = $1 OR LOWER(name) = $2`,
-            [abbr.toUpperCase(), name.toLowerCase()]
+            [(abbr || '').toUpperCase(), (name || '').toLowerCase()]
         );
-        res.send(query.rows);
+        res.json(query.rows);
     }
     catch(err){
         console.error(err);
@@ -24,17 +37,18 @@ router.get('/subjects', async(req, res) =>{
     }
 })
 
-// Patch abbreviation or name based on Primary Key (subject_id)
+// Patch requires all columns
 router.patch('/subjects', async(req, res) =>{
     try{
         let { subject_id, name, abbr } = req.body;
         const query = await client.query(
             `UPDATE subjects
             SET abbreviation = $1, name = $2 
-            WHERE subject_id = $3`,
-            [abbr.toUpperCase(), name.toLowerCase(), subject_id]
+            WHERE subject_id = $3
+            RETURNING *`,
+            [abbr.toUpperCase(), name, subject_id]
         );
-        res.send(query.rows);
+        res.json(query.rows);
     }
     catch(err){
         console.error(err);
@@ -42,16 +56,35 @@ router.patch('/subjects', async(req, res) =>{
     }
 })
 
-// Delete based on abbreviation or name
+// Delete based on subject_id
 router.delete('/subjects', async(req, res) =>{
+    try{
+        let { subject_id } = req.body;
+        const query = await client.query(
+            `DELETE FROM subjects
+            WHERE subject_id = $1
+            RETURNING *`,
+            [subject_id]
+        );
+        res.json(query.rows);
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).send("Database error");
+    }
+})
+
+// Post (auto-increment)
+router.post('/subjects', async(req, res) =>{
     try{
         let { name, abbr } = req.body;
         const query = await client.query(
-            `DELETE FROM subjects
-            WHERE abbreviation = $1 OR LOWER(name) = $2`,
-            [abbr.toUpperCase(), name.toLowerCase()]
+            `INSERT INTO subjects (name, abbreviation)
+            VALUES ($1, $2)
+            RETURNING *`,
+            [name, abbr.toUpperCase()]
         );
-        res.send(query.rows);
+        res.json(query.rows);
     }
     catch(err){
         console.error(err);

@@ -1,5 +1,3 @@
-# Make sure to install beautifulsoup, requests, lxml (for xml parsing), selenium and other libraries on the server that the end product will run on
-
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -12,8 +10,8 @@ import csv
 from dotenv import load_dotenv
 import os
 import requests
+import pandas as pd
 from pathlib import Path
-from itertools import islice
 
 def scrape_default_data():
     # start session
@@ -249,32 +247,94 @@ def update_database():
     load_dotenv()
     url = os.getenv("DATABASE_URL") + "/subjects"
     headers = {"api-admin-key": os.getenv("API_ADMIN_KEY")}
-    data = {
-        "name": "Computer Science and Engineering",
-        "abbr": "CSE"
-    }
-    response = requests.get(url, json=data, headers=headers)
-    print(response.json())
-
-
-    # test api requests for subjects then implement the comments below
-
+    
+    # {'subject_id': 29, 'name': 'Computer Science and Engineering', 'abbreviation': 'CSE'}
+    # data = {
+    #     'subject_id': 303,
+    #     "name": "testing post",
+    #     "abbr": "PST"
+    # }
+    # response = requests.delete(url, json=data, headers=headers)
+    # print(response.json())
 
     # Subjects csv file
-    # for each subject, get request
-    # compare get response to current subject data
-    # if duplicates exist, delete the incorrect one
-    # if different, put/patch request to update subject data
-    # if subject does not exist, post request to add subject data
+    with open("subjects.csv", "r") as f:
+        reader = csv.reader(f)
+        subjects_csv = [row for row in reader]
+        for i in range(1, len(subjects_csv)):
+            subject_name = subjects_csv[i][0]
+            subject_abbr = subjects_csv[i][1]
+            data = {
+                "name": subject_name,
+                "abbr": subject_abbr
+            }
+            response = requests.get(url, json=data, headers=headers)
+
+            # Delete duplicates
+            if len(response.json()) >= 2:
+                found_correct_subject = False
+                for subject in response.json():
+                    if subject["name"] == subject_name and subject["abbreviation"] == subject_abbr:
+                        if not found_correct_subject: 
+                            found_correct_subject = True
+                        else: 
+                            delete_response = requests.delete(url, json={"subject_id": subject["subject_id"]}, headers=headers)
+                            print("Deleted duplicate subject with id: " + str(subject["subject_id"]))
+                    else: 
+                        delete_response = requests.delete(url, json={"subject_id": subject["subject_id"]}, headers=headers)
+                        print("Deleted duplicate subject with id: " + str(subject["subject_id"]))
+
+            # Patch incorrect name or abbreviation
+            if len(response.json()) == 1:
+                subject = response.json()[0]
+                if subject["name"] != subject_name or subject["abbreviation"] != subject_abbr:
+                    patch_response = requests.patch(url, json={"subject_id": subject["subject_id"], "name": subject_name, "abbr": subject_abbr}, headers=headers)
+                    print("Patched subject with id: " + str(subject["subject_id"]))
+
+            # Create new subject if it does not exist
+            if len(response.json()) == 0:
+                post_response = requests.post(url, json=data, headers=headers)
+                print("Created subject: " + subject_name)
+            
+            # print(response.json())
+        
+        # Delete subjects that are in the database but not in the csv file
+        csv_df = pd.read_csv('subjects.csv')
+        csv_abbr = set(csv_df['subject abbreviation'].tolist())
+
+        response = requests.get(url, headers=headers)
+        db_abbr = set([subject["abbreviation"] for subject in response.json()])
+
+        excess_data = db_abbr - csv_abbr
+        for abbr in excess_data:
+            response = requests.get(url, json={"abbr": abbr}, headers=headers)
+            subject_id = response.json()[0]["subject_id"]
+            delete_response = requests.delete(url, json={"subject_id": subject_id}, headers=headers)
+            print("Deleted excess subject with abbreviation: " + abbr)
 
 
     # You need to add logic to verify that the courses have the correct subject foreign key, when you implement the courses csv file
+    # with open("courses.csv", "r") as f:
 
+
+    # Add logic to verify that the database tables match the number of rows in the csv files
+
+def temp():
+    load_dotenv()
+    url = os.getenv("DATABASE_URL") + "/subjects"
+    headers = {"api-admin-key": os.getenv("API_ADMIN_KEY")}
+    data = {
+        "name": "delete me",
+        "abbr": "DEL"
+    }
+    response = requests.post(url, json=data, headers=headers)
+    print(response.json())
 
 if __name__ == "__main__":
     start = time.time()
     # updateTruncatedSubjectMap()
     # scrape_default_data()
     # html_to_csv()
+    # temp()
     update_database()
     print("Total Elapsed Time in minutes: " + str( (time.time() - start) / 60))
